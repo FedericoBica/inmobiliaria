@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Tipografía */
+  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
+
+  /* Paleta — nombres evocadores del paisaje rural */
+  --color-tierra: #1A1C14;      /* texto principal */
+  --color-campo:  #2D4A1E;      /* verde bosque */
+  --color-trigal: #A8881C;      /* oro cosecha — precio USD/ha */
+  --color-paja:   #F5F0E8;      /* fondo cálido principal */
+  --color-crema:  #E0D9CC;      /* bordes y superficies */
+  --color-piedra: #7A7564;      /* texto secundario */
+  --color-noche:  #0F1209;      /* fondo hero oscuro */
+}
+
+html {
+  font-size: 17px; /* mínimo para legibilidad del productor rural (spec 10) */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  background-color: #F5F0E8;
+  color: #1A1C14;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Patrón de fondo topográfico para el hero */
+.hero-bg {
+  background-color: #0F1209;
+  background-image:
+    radial-gradient(ellipse at 25% 60%, rgba(45,74,30,0.28) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(45,74,30,0.18) 0%, transparent 50%),
+    repeating-linear-gradient(
+      0deg, transparent, transparent 39px,
+      rgba(168,136,28,0.055) 39px, rgba(168,136,28,0.055) 40px
+    ),
+    repeating-linear-gradient(
+      90deg, transparent, transparent 39px,
+      rgba(168,136,28,0.055) 39px, rgba(168,136,28,0.055) 40px
+    );
+}
+
+/* Animación de entrada escalonada */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+
+.anim-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.anim-delay-2 { animation-delay: 0.25s; opacity: 0; }
+.anim-delay-3 { animation-delay: 0.4s; opacity: 0; }
+.anim-delay-4 { animation-delay: 0.55s; opacity: 0; }

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment variables — NUNCA commitear .env con valores reales
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Drizzle — las migraciones generadas se commitean, pero no el journal local
+# Descomenta la siguiente línea si preferís no commitear las migraciones:
+# src/db/migrations/
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
