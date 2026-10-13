@@ -1,122 +1,15 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { CTAContactoSidebar, CTAFlotanteMobile } from "@/components/campo/CTAContacto";
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-type DesgloseConeat = { grupoSuelo: string; indice: number; hectareas: number };
-type FuenteAgua = { tipo: string; cantidad: number; estado: string | null; observaciones: string | null };
-type Mejora = { tipo: string; superficieM2: number | null; estado: string | null; descripcion: string | null; antiguedadAnios: number | null };
-
-type CampoDetalle = {
-  id: string;
-  referencia: string;
-  titulo: string;
-  departamento: string;
-  paraje: string;
-  seccionPolicial: string;
-  seccionJudicial: string;
-  superficieHa: number;
-  coneatPromedio: number;
-  precioVentaUsd: number | null;
-  precioUsdHa: number;
-  rentaArrendamientoUsdHaAnio: number | null;
-  tipoOperacion: string[];
-  estadoPublicacion: string;
-  estadoOcupacion: string | null;
-  precisionUbicacion: "exacta" | "aproximada" | "oculta";
-  radioAproximacionM: number | null;
-  esExclusiva: boolean;
-  haLaborable: number | null;
-  haCampoNatural: number | null;
-  haPraderas: number | null;
-  haMonteNativo: number | null;
-  haForestado: number | null;
-  aptitud: string[];
-  dotacionHistoricaUgHa: number | null;
-  pctPrioridadForestal: number | null;
-  desgloseConeat: DesgloseConeat[];
-  fuentesAgua: FuenteAgua[];
-  mejoras: Mejora[];
-  alambradoPerimetralEstado: string | null;
-  alambradoDivisorioEstado: string | null;
-  cantidadPotreros: number | null;
-  kmAlambrado: number | null;
-  energia: string | null;
-  acceso: string | null;
-  accesoTodoTiempo: boolean | null;
-  kmARuta: number | null;
-  kmACentroPoblado: number | null;
-  centroPobladoReferencia: string | null;
-  tieneDerechoRiego: boolean;
-  haBajoRiego: number | null;
-};
-
-// ─── Mock data — se reemplaza con DB query ────────────────────────────────────
-
-const CAMPO_MOCK: CampoDetalle = {
-  id: "1",
-  referencia: "CA-0042",
-  titulo: "Campo ganadero sobre Ruta 5",
-  departamento: "Tacuarembó",
-  paraje: "Paso de los Toros",
-  seccionPolicial: "2ª",
-  seccionJudicial: "4ª",
-  superficieHa: 450,
-  coneatPromedio: 95.4,
-  precioVentaUsd: 1440000,
-  precioUsdHa: 3200,
-  rentaArrendamientoUsdHaAnio: null,
-  tipoOperacion: ["venta"],
-  estadoPublicacion: "publicado",
-  estadoOcupacion: "arrendado",
-  precisionUbicacion: "aproximada",
-  radioAproximacionM: 3000,
-  esExclusiva: true,
-  haLaborable: 180,
-  haCampoNatural: 220,
-  haPraderas: 30,
-  haMonteNativo: 15,
-  haForestado: 5,
-  aptitud: ["ganadera"],
-  dotacionHistoricaUgHa: 0.82,
-  pctPrioridadForestal: 12,
-  desgloseConeat: [
-    { grupoSuelo: "8.12", indice: 110, hectareas: 120 },
-    { grupoSuelo: "6.4", indice: 92, hectareas: 180 },
-    { grupoSuelo: "5.01", indice: 78, hectareas: 150 },
-  ],
-  fuentesAgua: [
-    { tipo: "arroyo", cantidad: 1, estado: "bueno", observaciones: "Frente al límite norte" },
-    { tipo: "tajamar", cantidad: 3, estado: "bueno", observaciones: null },
-    { tipo: "molino", cantidad: 2, estado: "regular", observaciones: "Uno requiere reparación" },
-    { tipo: "bebedero", cantidad: 8, estado: "bueno", observaciones: null },
-  ],
-  tieneDerechoRiego: false,
-  haBajoRiego: null,
-  mejoras: [
-    { tipo: "casco", superficieM2: 280, estado: "bueno", descripcion: "Casa principal, 4 dormitorios, galería perimetral", antiguedadAnios: 40 },
-    { tipo: "galpon", superficieM2: 600, estado: "bueno", descripcion: "Galpón multipropósito con piso de hormigón", antiguedadAnios: 15 },
-    { tipo: "corral", superficieM2: null, estado: "bueno", descripcion: "Corral de piedra con manga, brete y tubo", antiguedadAnios: 25 },
-    { tipo: "casa_personal", superficieM2: 80, estado: "regular", descripcion: "Casa para personal, 2 dormitorios", antiguedadAnios: 30 },
-    { tipo: "balanza", superficieM2: null, estado: "bueno", descripcion: "Balanza ganadera electrónica", antiguedadAnios: 8 },
-  ],
-  alambradoPerimetralEstado: "bueno",
-  alambradoDivisorioEstado: "regular",
-  cantidadPotreros: 12,
-  kmAlambrado: 28,
-  energia: "en_predio_monofasica",
-  acceso: "camino_departamental_balastro",
-  accesoTodoTiempo: true,
-  kmARuta: 12,
-  kmACentroPoblado: 18,
-  centroPobladoReferencia: "Paso de los Toros",
-};
-
-const SIMILARES = [
-  { referencia: "CA-0055", departamento: "Tacuarembó", paraje: "Ansina", superficieHa: 520, coneatPromedio: 88, precioUsdHa: 2950, slug: "campo-ganadero-tacuarembo-ca-0055", aptitud: "ganadera", tipo: "venta" },
-  { referencia: "CA-0071", departamento: "Rivera", paraje: "Minas de Corrales", superficieHa: 380, coneatPromedio: 79, precioUsdHa: 2600, slug: "campo-ganadero-rivera-ca-0071", aptitud: "ganadera", tipo: "venta" },
-  { referencia: "CA-0038", departamento: "Tacuarembó", paraje: "San Gregorio", superficieHa: 680, coneatPromedio: 102, precioUsdHa: 3400, slug: "campo-agricola-tacuarembo-ca-0038", aptitud: "agricola_ganadera", tipo: "venta" },
-];
+import { getNonce } from "@/lib/nonce";
+import { obtenerUbicacionPublica, type UbicacionPublica } from "@/lib/ubicacion-publica";
+import {
+  getCampoDetallePorSlug,
+  getCamposSimilares,
+  type CampoDetalle,
+  type CampoResumen,
+} from "@/lib/campos-publico";
+import { DEPARTAMENTO_LABEL } from "@/lib/departamentos";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -193,25 +86,46 @@ function EstadoBadge({ estado }: { estado: string }) {
 
 // ─── Secciones de contenido ───────────────────────────────────────────────────
 
-function SeccionGaleria() {
+function SeccionGaleria({ campo }: { campo: CampoDetalle }) {
+  const fotos = campo.media.filter((m) => m.tipo === "foto" || m.tipo === "foto_drone");
+
+  if (fotos.length === 0) {
+    return (
+      <section className="mb-8">
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-80 rounded-2xl overflow-hidden">
+          <div className="col-span-4 row-span-2 bg-campo relative flex items-center justify-center">
+            <div className="absolute inset-0 opacity-10"
+              style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 21px)" }}
+            />
+            <div className="text-center">
+              <p className="font-mono text-white/40 text-xs mb-1">{campo.referencia}</p>
+              <p className="text-white/25 text-sm">Fotos disponibles al consultar</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const [principal, ...resto] = fotos;
+
   return (
     <section className="mb-8">
       <div className="grid grid-cols-4 grid-rows-2 gap-2 h-80 rounded-2xl overflow-hidden">
-        {/* Principal */}
-        <div className="col-span-3 row-span-2 bg-campo relative flex items-center justify-center">
-          <div className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 21px)" }}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={principal.url}
+          alt={principal.altText ?? campo.titulo}
+          className="col-span-3 row-span-2 w-full h-full object-cover"
+        />
+        {resto.slice(0, 4).map((foto) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={foto.id}
+            src={foto.urlThumb ?? foto.url}
+            alt={foto.altText ?? campo.titulo}
+            className="w-full h-full object-cover"
           />
-          <div className="text-center">
-            <p className="font-mono text-white/40 text-xs mb-1">CA-0042</p>
-            <p className="text-white/25 text-sm">Fotos disponibles al consultar</p>
-          </div>
-        </div>
-        {/* Miniaturas */}
-        {["Aéreo", "Aguada", "Mejoras", "Acceso"].map((label) => (
-          <div key={label} className="bg-[#1e3312] relative flex items-end justify-start p-2">
-            <span className="text-[10px] text-white/30 font-mono">{label}</span>
-          </div>
         ))}
       </div>
     </section>
@@ -275,8 +189,8 @@ function SeccionDatosProductivos({ campo }: { campo: CampoDetalle }) {
           <tfoot className="bg-crema/40 border-t border-crema">
             <tr>
               <td className="px-4 py-3 text-[11px] font-mono uppercase text-piedra">Promedio ponderado</td>
-              <td className={`px-4 py-3 font-mono text-right font-bold ${coneatColor(campo.coneatPromedio)}`}>
-                {fmtN(campo.coneatPromedio, 1)}
+              <td className={`px-4 py-3 font-mono text-right font-bold ${campo.coneatPromedio != null ? coneatColor(campo.coneatPromedio) : "text-piedra"}`}>
+                {campo.coneatPromedio != null ? fmtN(campo.coneatPromedio, 1) : "—"}
               </td>
               <td className="px-4 py-3 font-mono text-right font-medium text-tierra">{fmtHa(campo.superficieHa)}</td>
               <td className="px-4 py-3 font-mono text-right text-piedra">100%</td>
@@ -441,12 +355,28 @@ function SeccionAccesos({ campo }: { campo: CampoDetalle }) {
   );
 }
 
-function SeccionMapa({ campo }: { campo: CampoDetalle }) {
+function SeccionMapa({ campo, ubicacion }: { campo: CampoDetalle; ubicacion: UbicacionPublica }) {
+  // La geometría/centroide real nunca llegan a este componente salvo en
+  // modo 'exacta' — ubicacion ya viene filtrada por obtenerUbicacionPublica.
   const msgs = {
-    exacta: { label: "Polígono real", desc: "La ubicación exacta del campo está disponible en el mapa.", color: "text-campo" },
-    aproximada: { label: "Ubicación aproximada", desc: `Posición desplazada aleatoriamente hasta ${(campo.radioAproximacionM ?? 3000) / 1000} km del campo real. Solicitá la ubicación exacta al consultar.`, color: "text-amber-700" },
-    oculta: { label: "Ubicación reservada", desc: "Por decisión del propietario, la ubicación no se publica. Consultá para más información.", color: "text-piedra" },
-  }[campo.precisionUbicacion];
+    exacta: {
+      label: "Polígono real",
+      desc: "La ubicación exacta del campo está disponible en el mapa.",
+      color: "text-campo",
+    },
+    aproximada: {
+      label: "Ubicación aproximada",
+      desc: `Círculo centrado en un punto desplazado aleatoriamente, radio ${Math.round(
+        (ubicacion.modo === "aproximada" ? ubicacion.radioM : 3000) / 1000
+      )} km. Solicitá la ubicación exacta al consultar.`,
+      color: "text-amber-700",
+    },
+    oculta: {
+      label: "Ubicación reservada",
+      desc: "Por decisión del propietario, la ubicación no se publica. Consultá para más información.",
+      color: "text-piedra",
+    },
+  }[ubicacion.modo];
 
   return (
     <section className="py-8 border-b border-crema">
@@ -459,7 +389,7 @@ function SeccionMapa({ campo }: { campo: CampoDetalle }) {
           <p className={`font-mono text-xs uppercase tracking-wider mb-2 ${msgs.color}`}>{msgs.label}</p>
           <p className="text-white/50 text-sm max-w-xs">{msgs.desc}</p>
           <p className="text-white/20 text-xs mt-4 font-mono">
-            {campo.departamento} · {campo.paraje}
+            {DEPARTAMENTO_LABEL[campo.departamento] ?? campo.departamento} · {campo.paraje}
           </p>
         </div>
       </div>
@@ -471,7 +401,7 @@ function SeccionMapa({ campo }: { campo: CampoDetalle }) {
   );
 }
 
-function SimilarCard({ c }: { c: typeof SIMILARES[0] }) {
+function SimilarCard({ c }: { c: CampoResumen }) {
   return (
     <Link
       href={`/campos/${c.slug}`}
@@ -479,7 +409,7 @@ function SimilarCard({ c }: { c: typeof SIMILARES[0] }) {
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="font-semibold text-tierra">{c.departamento}</p>
+          <p className="font-semibold text-tierra">{DEPARTAMENTO_LABEL[c.departamento] ?? c.departamento}</p>
           <p className="text-piedra text-sm">{c.paraje}</p>
         </div>
         <span className="font-mono text-xs text-piedra">{c.referencia}</span>
@@ -489,17 +419,21 @@ function SimilarCard({ c }: { c: typeof SIMILARES[0] }) {
           <p className="text-[10px] font-mono uppercase text-piedra">Sup.</p>
           <p className="font-mono font-medium text-tierra">{fmtHa(c.superficieHa)}</p>
         </div>
-        <div>
-          <p className="text-[10px] font-mono uppercase text-piedra">CNEAT</p>
-          <p className={`font-mono font-medium ${coneatColor(c.coneatPromedio)}`}>{c.coneatPromedio}</p>
-        </div>
-        <div>
-          <p className="text-[10px] font-mono uppercase text-piedra">Aptitud</p>
-          <p className="text-tierra text-sm">{APTITUD[c.aptitud] ?? c.aptitud}</p>
-        </div>
+        {c.coneatPromedio != null && (
+          <div>
+            <p className="text-[10px] font-mono uppercase text-piedra">CNEAT</p>
+            <p className={`font-mono font-medium ${coneatColor(c.coneatPromedio)}`}>{c.coneatPromedio}</p>
+          </div>
+        )}
+        {c.aptitud[0] && (
+          <div>
+            <p className="text-[10px] font-mono uppercase text-piedra">Aptitud</p>
+            <p className="text-tierra text-sm">{APTITUD[c.aptitud[0]] ?? c.aptitud[0]}</p>
+          </div>
+        )}
       </div>
       <p className="font-display text-xl font-semibold text-trigal mt-auto">
-        USD {fmtN(c.precioUsdHa)}/ha
+        {c.precioUsdHa != null ? `USD ${fmtN(c.precioUsdHa)}/ha` : "Consultar precio"}
       </p>
     </Link>
   );
@@ -512,37 +446,31 @@ export default async function CampoDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await params; // TODO: use slug to query DB
+  const { slug } = await params;
 
-  const campo = CAMPO_MOCK;
+  const campo = await getCampoDetallePorSlug(slug);
+  if (!campo) notFound();
+
+  const nonce = await getNonce();
+  const whatsappNumber = process.env.WHATSAPP_PHONE || undefined;
+
+  const [ubicacion, similares] = await Promise.all([
+    obtenerUbicacionPublica(campo.id),
+    getCamposSimilares(campo.id, campo.departamento),
+  ]);
+
   const esArrendamiento = campo.tipoOperacion.includes("arrendamiento");
 
-  const precioDisplay = esArrendamiento && campo.rentaArrendamientoUsdHaAnio
-    ? `USD ${fmtN(campo.rentaArrendamientoUsdHaAnio)}/ha·año`
-    : `USD ${fmtN(campo.precioUsdHa)}/ha`;
+  const precioDisplay = esArrendamiento && campo.rentaUsdHaAnio
+    ? `USD ${fmtN(campo.rentaUsdHaAnio)}/ha·año`
+    : campo.precioUsdHa != null
+    ? `USD ${fmtN(campo.precioUsdHa)}/ha`
+    : "Consultar precio";
 
   const precioTotal = campo.precioVentaUsd ? fmtUsd(campo.precioVentaUsd) : null;
 
   return (
-    <div className="bg-paja min-h-screen pb-24 lg:pb-0">
-
-      {/* NAV */}
-      <header className="hero-bg sticky top-0 z-40 border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="font-display text-2xl font-semibold text-white">
-              Campos<span className="text-trigal">URY</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/campos" className="text-white/70 hover:text-white text-sm transition-colors">Campos</Link>
-              <Link href="/informes" className="text-white/70 hover:text-white text-sm transition-colors">Informes</Link>
-            </nav>
-            <Link href="/contacto" className="rounded-lg bg-trigal px-4 py-2 text-sm font-semibold text-white hover:bg-[#8A6E14] transition-colors">
-              Publicar campo
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="bg-[#FBF8F3] min-h-screen pb-24 lg:pb-0">
 
       {/* BREADCRUMB */}
       <nav aria-label="Ruta de navegación" className="border-b border-crema bg-white">
@@ -552,12 +480,20 @@ export default async function CampoDetailPage({
             <li className="text-crema">›</li>
             <li><Link href="/campos" className="hover:text-tierra transition-colors">Campos</Link></li>
             <li className="text-crema">›</li>
-            <li><Link href={`/campos?departamento=${campo.departamento.toLowerCase()}`} className="hover:text-tierra transition-colors">{campo.departamento}</Link></li>
+            <li><Link href={`/campos?departamento=${campo.departamento}`} className="hover:text-tierra transition-colors">{DEPARTAMENTO_LABEL[campo.departamento] ?? campo.departamento}</Link></li>
             <li className="text-crema">›</li>
             <li className="text-tierra font-medium" aria-current="page">{campo.referencia}</li>
           </ol>
         </div>
       </nav>
+
+      {/* BANNER VENDIDO/RESERVADO — la ficha se mantiene accesible (nunca
+          404) para no perder enlaces entrantes; spec sección 9 */}
+      {(campo.estadoPublicacion === "vendido" || campo.estadoPublicacion === "reservado") && (
+        <div className={`py-2.5 text-center text-sm font-semibold text-white ${campo.estadoPublicacion === "vendido" ? "bg-piedra" : "bg-amber-600"}`}>
+          {campo.estadoPublicacion === "vendido" ? "Vendido" : "Reservado"} — esta ficha se conserva a modo de referencia
+        </div>
+      )}
 
       {/* ENCABEZADO */}
       <div className="bg-white border-b border-crema">
@@ -589,7 +525,9 @@ export default async function CampoDetailPage({
             {campo.titulo}
           </h1>
           <p className="text-piedra mb-6">
-            {campo.departamento} · {campo.paraje} · Sección policial {campo.seccionPolicial} · Judicial {campo.seccionJudicial}
+            {DEPARTAMENTO_LABEL[campo.departamento] ?? campo.departamento} · {campo.paraje}
+            {campo.seccionPolicial && ` · Sección policial ${campo.seccionPolicial}`}
+            {campo.seccionJudicial && ` · Judicial ${campo.seccionJudicial}`}
           </p>
 
           {/* Métricas principales */}
@@ -598,10 +536,12 @@ export default async function CampoDetailPage({
               <p className="text-[11px] font-mono uppercase tracking-wider text-piedra mb-1">Superficie</p>
               <p className="font-mono text-2xl font-bold text-tierra">{fmtHa(campo.superficieHa)}</p>
             </div>
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-piedra mb-1">CONEAT promedio</p>
-              <p className={`font-mono text-2xl font-bold ${coneatColor(campo.coneatPromedio)}`}>{fmtN(campo.coneatPromedio, 1)}</p>
-            </div>
+            {campo.coneatPromedio != null && (
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-piedra mb-1">CONEAT promedio</p>
+                <p className={`font-mono text-2xl font-bold ${coneatColor(campo.coneatPromedio)}`}>{fmtN(campo.coneatPromedio, 1)}</p>
+              </div>
+            )}
             <div>
               <p className="text-[11px] font-mono uppercase tracking-wider text-piedra mb-1">Aptitud</p>
               <p className="text-tierra text-lg font-medium">{campo.aptitud.map((a) => APTITUD[a] ?? a).join(", ")}</p>
@@ -625,12 +565,12 @@ export default async function CampoDetailPage({
 
           {/* COLUMNA IZQUIERDA */}
           <div>
-            <SeccionGaleria />
+            <SeccionGaleria campo={campo} />
             <SeccionDatosProductivos campo={campo} />
             <SeccionAgua campo={campo} />
             <SeccionMejoras campo={campo} />
             <SeccionAccesos campo={campo} />
-            <SeccionMapa campo={campo} />
+            <SeccionMapa campo={campo} ubicacion={ubicacion} />
 
             {/* Descargo legal */}
             <p className="mt-8 text-xs text-piedra leading-relaxed bg-crema/50 rounded-lg px-4 py-3">
@@ -646,6 +586,8 @@ export default async function CampoDetailPage({
                 campoId={campo.id}
                 precioDisplay={precioDisplay}
                 precioTotal={precioTotal}
+                whatsappNumber={whatsappNumber}
+                nonce={nonce}
               />
             </div>
           </aside>
@@ -653,26 +595,28 @@ export default async function CampoDetailPage({
       </div>
 
       {/* CAMPOS SIMILARES */}
-      <section className="bg-crema/50 border-t border-crema py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">Podría interesarte</p>
-            <h2 className="font-display text-3xl font-semibold text-tierra">Campos similares</h2>
+      {similares.length > 0 && (
+        <section className="bg-crema/50 border-t border-crema py-12">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">Podría interesarte</p>
+              <h2 className="font-display text-3xl font-semibold text-tierra">Campos similares</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {similares.map((c) => <SimilarCard key={c.id} c={c} />)}
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SIMILARES.map((c) => <SimilarCard key={c.referencia} c={c} />)}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FOOTER */}
       <footer className="hero-bg border-t border-white/10 py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <Link href="/" className="font-display text-xl font-semibold text-white">
-            Campos<span className="text-trigal">URY</span>
+            Inmobiliaria Rural
           </Link>
           <p className="text-white/30 text-xs font-mono">
-            © {new Date().getFullYear()} CamposURY · Todos los derechos reservados
+            © {new Date().getFullYear()} Inmobiliaria Rural · Todos los derechos reservados
           </p>
         </div>
       </footer>
@@ -682,6 +626,7 @@ export default async function CampoDetailPage({
         referencia={campo.referencia}
         campoId={campo.id}
         precioDisplay={precioDisplay}
+        whatsappNumber={whatsappNumber}
       />
     </div>
   );

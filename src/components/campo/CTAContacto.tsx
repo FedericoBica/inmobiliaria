@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { crearConsulta } from "@/app/(public)/campos/[slug]/consulta-actions";
+import TurnstileWidget from "@/components/ui/TurnstileWidget";
 
 const WhatsAppIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -23,6 +25,7 @@ type Props = {
   whatsappNumber?: string;
   precioDisplay: string;
   precioTotal?: string | null;
+  nonce?: string;
 };
 
 // ─── Barra fija mobile (siempre visible mientras se hace scroll) ──────────────
@@ -65,25 +68,65 @@ export function CTAContactoSidebar({
   whatsappNumber = "598XXXXXXXXX",
   precioDisplay,
   precioTotal,
+  nonce,
 }: Props) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [mensaje, setMensaje] = useState("");
-  const [consentimiento, setConsentimiento] = useState(false);
-  const [estado, setEstado] = useState<"idle" | "enviando" | "ok" | "error">("idle");
+  const [consentimientoMarketing, setConsentimientoMarketing] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [estado, setEstado] = useState<"idle" | "ok">("idle");
+  const [isPending, startTransition] = useTransition();
+
+  // UTM y referrer capturados una sola vez al montar
+  const [utm, setUtm] = useState({ source: "", medium: "", campaign: "", referrer: "" });
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setUtm({
+      source: params.get("utm_source") ?? "",
+      medium: params.get("utm_medium") ?? "",
+      campaign: params.get("utm_campaign") ?? "",
+      referrer: document.referrer ?? "",
+    });
+  }, []);
 
   const msg = encodeURIComponent(
     `Hola, consulto por el campo ${referencia}. ¿Me pueden dar más información?`
   );
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!consentimiento) return;
-    setEstado("enviando");
-    // TODO: POST /api/consultas
-    await new Promise((r) => setTimeout(r, 700));
-    setEstado("ok");
+    setError(null);
+    // Honeypot — si un bot lo completó, dejamos que el server action lo
+    // trate como envío fantasma (no revelamos nada acá tampoco)
+    const honeypot =
+      (e.currentTarget.elements.namedItem("website") as HTMLInputElement | null)
+        ?.value ?? "";
+
+    const formData = new FormData();
+    formData.set("website", honeypot);
+    formData.set("campoId", campoId);
+    formData.set("nombre", nombre);
+    formData.set("email", email);
+    formData.set("telefono", telefono);
+    formData.set("mensaje", mensaje);
+    formData.set("consentimientoMarketing", consentimientoMarketing ? "on" : "");
+    formData.set("turnstileToken", turnstileToken);
+    formData.set("utmSource", utm.source);
+    formData.set("utmMedium", utm.medium);
+    formData.set("utmCampaign", utm.campaign);
+    formData.set("referrer", utm.referrer);
+
+    startTransition(async () => {
+      const result = await crearConsulta(formData);
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      setEstado("ok");
+    });
   }
 
   const inputCls =
@@ -126,7 +169,17 @@ export function CTAContactoSidebar({
             <p className="text-piedra text-sm">Te contactamos a la brevedad.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+            {/* Honeypot — invisible para humanos, los bots lo completan */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+            />
+
             <input
               type="text" placeholder="Nombre y apellido" required
               value={nombre} onChange={(e) => setNombre(e.target.value)}
@@ -148,27 +201,33 @@ export function CTAContactoSidebar({
               className={`${inputCls} resize-none`}
             />
 
-            {/* Consentimiento obligatorio — Ley 18.331 URCDP */}
+            {/* Consentimiento de marketing — separado y opcional (contacto ≠ marketing) */}
             <label className="flex gap-2.5 items-start cursor-pointer">
               <input
-                type="checkbox" required
-                checked={consentimiento} onChange={(e) => setConsentimiento(e.target.checked)}
+                type="checkbox"
+                checked={consentimientoMarketing}
+                onChange={(e) => setConsentimientoMarketing(e.target.checked)}
                 className="mt-0.5 h-4 w-4 accent-trigal shrink-0"
               />
               <span className="text-[11px] text-piedra leading-relaxed">
-                Acepto que mis datos sean usados para responder esta consulta.{" "}
-                <a href="/privacidad" className="underline hover:text-tierra">
-                  Política de privacidad.
-                </a>
+                Quiero recibir novedades y campos similares por email (opcional).
               </span>
             </label>
 
+            <TurnstileWidget nonce={nonce} onVerify={setTurnstileToken} />
+
+            {error && (
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={estado === "enviando" || !consentimiento}
+              disabled={isPending}
               className="w-full rounded-xl bg-trigal py-3 text-sm font-semibold text-white hover:bg-[#8A6E14] disabled:opacity-50 transition-colors"
             >
-              {estado === "enviando" ? "Enviando..." : "Enviar consulta"}
+              {isPending ? "Enviando..." : "Enviar consulta"}
             </button>
           </form>
         )}

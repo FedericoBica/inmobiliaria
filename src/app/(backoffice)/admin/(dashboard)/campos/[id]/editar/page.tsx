@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { campos } from "@/db/schema/campos";
-import { padrones, desgloseConeat, fuentesAgua, mejoras } from "@/db/schema/campo-children";
-import { eq } from "drizzle-orm";
+import { padrones, desgloseConeat, fuentesAgua, mejoras, media } from "@/db/schema/campo-children";
+import { eq, asc } from "drizzle-orm";
 import CampoForm from "@/components/backoffice/CampoForm";
 import type { CampoFormData } from "@/app/(backoffice)/admin/(dashboard)/campos/actions";
+import { obtenerPropietarioContacto } from "@/app/(backoffice)/admin/(dashboard)/campos/actions";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -15,11 +16,13 @@ export default async function EditarCampoPage({ params }: Props) {
   const [campo] = await db.select().from(campos).where(eq(campos.id, id));
   if (!campo) notFound();
 
-  const [padronesRows, coneatRows, aguaRows, mejorasRows] = await Promise.all([
+  const [padronesRows, coneatRows, aguaRows, mejorasRows, mediaRows, propietario] = await Promise.all([
     db.select().from(padrones).where(eq(padrones.campoId, id)),
     db.select().from(desgloseConeat).where(eq(desgloseConeat.campoId, id)),
     db.select().from(fuentesAgua).where(eq(fuentesAgua.campoId, id)),
     db.select().from(mejoras).where(eq(mejoras.campoId, id)),
+    db.select().from(media).where(eq(media.campoId, id)).orderBy(asc(media.orden)),
+    obtenerPropietarioContacto(id),
   ]);
 
   const initialData: Partial<CampoFormData> = {
@@ -70,6 +73,9 @@ export default async function EditarCampoPage({ params }: Props) {
     notasInternas: campo.notasInternas ?? "",
     estadoDominial: campo.estadoDominial ?? "",
     observacionesJuridicas: campo.observacionesJuridicas ?? "",
+    propietarioNombre: propietario.nombre,
+    propietarioTelefono: propietario.telefono,
+    propietarioEmail: propietario.email,
 
     desgloseConeat: coneatRows.map((r) => ({
       id: r.id, grupoSuelo: r.grupoSuelo, indice: r.indice ?? "", hectareas: r.hectareas ?? "",
@@ -105,7 +111,7 @@ export default async function EditarCampoPage({ params }: Props) {
         <p className="text-gray-500 text-sm mt-1">{campo.titulo}</p>
       </div>
 
-      <CampoForm campoId={id} initialData={initialData} />
+      <CampoForm campoId={id} initialData={initialData} media={mediaRows} />
     </div>
   );
 }

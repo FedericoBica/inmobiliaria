@@ -2,7 +2,6 @@ import { db } from "@/db";
 import { agentes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { authenticator } from "@otplib/preset-default";
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -57,18 +56,6 @@ export async function verifyCredentials(email: string, password: string) {
     .where(eq(agentes.id, agente.id));
 
   return { agente };
-}
-
-export function verifyTotp(secret: string, token: string): boolean {
-  return authenticator.verify({ token, secret });
-}
-
-export function generateTotpSecret(): string {
-  return authenticator.generateSecret();
-}
-
-export function getTotpUri(secret: string, email: string): string {
-  return authenticator.keyuri(email, "Inmobiliaria Rural", secret);
 }
 
 export async function hashPassword(password: string): Promise<string> {

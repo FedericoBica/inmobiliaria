@@ -1,120 +1,13 @@
 import Link from "next/link";
 import BuscadorHome from "@/components/ui/BuscadorHome";
+import Navbar from "@/components/ui/Navbar";
+import { getCamposDestacados, getUltimosIngresos, type CampoResumen } from "@/lib/campos-publico";
+import { getContenidosPublicados, TIPO_CONTENIDO_LABEL } from "@/lib/contenido-publico";
+import { DEPARTAMENTO_LABEL } from "@/lib/departamentos";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type Campo = {
-  id: string;
-  referencia: string;
-  departamento: string;
-  paraje: string;
-  superficieHa: number;
-  coneatPromedio: number;
-  precioUsdHa: number;
-  precioVentaUsd: number | null;
-  tipoOperacion: string[];
-  aptitud: string[];
-  slug: string;
-  rentaUsdHaAnio?: number;
-};
-
-// ─── Mock data (se reemplaza con consultas a DB) ──────────────────────────────
-
-const CAMPOS_DESTACADOS: Campo[] = [
-  {
-    id: "1", referencia: "CA-0042",
-    departamento: "Tacuarembó", paraje: "Paso de los Toros",
-    superficieHa: 450, coneatPromedio: 95,
-    precioUsdHa: 3200, precioVentaUsd: 1440000,
-    tipoOperacion: ["venta"], aptitud: ["ganadera"],
-    slug: "campo-ganadero-tacuarembo-ca-0042",
-  },
-  {
-    id: "2", referencia: "CA-0087",
-    departamento: "Paysandú", paraje: "Chapicuy",
-    superficieHa: 820, coneatPromedio: 112,
-    precioUsdHa: 2800, precioVentaUsd: 2296000,
-    tipoOperacion: ["venta"], aptitud: ["agricola_ganadera"],
-    slug: "campo-agricola-ganadero-paysandu-ca-0087",
-  },
-  {
-    id: "3", referencia: "CA-0031",
-    departamento: "Soriano", paraje: "Cardona",
-    superficieHa: 1240, coneatPromedio: 108,
-    precioUsdHa: 4100, precioVentaUsd: 5084000,
-    tipoOperacion: ["venta"], aptitud: ["agricola"],
-    slug: "campo-agricola-soriano-ca-0031",
-  },
-  {
-    id: "4", referencia: "CA-0118",
-    departamento: "Colonia", paraje: "Tarariras",
-    superficieHa: 320, coneatPromedio: 130,
-    precioUsdHa: 5600, precioVentaUsd: 1792000,
-    tipoOperacion: ["venta"], aptitud: ["lechera"],
-    slug: "campo-lechero-colonia-ca-0118",
-  },
-  {
-    id: "5", referencia: "CA-0067",
-    departamento: "Durazno", paraje: "Santa Bernardina",
-    superficieHa: 680, coneatPromedio: 88,
-    precioUsdHa: 0, precioVentaUsd: null,
-    tipoOperacion: ["arrendamiento"], aptitud: ["ganadera"],
-    slug: "campo-ganadero-durazno-ca-0067",
-    rentaUsdHaAnio: 180,
-  },
-  {
-    id: "6", referencia: "CA-0093",
-    departamento: "Río Negro", paraje: "Young",
-    superficieHa: 950, coneatPromedio: 118,
-    precioUsdHa: 3700, precioVentaUsd: 3515000,
-    tipoOperacion: ["venta"], aptitud: ["arrocera"],
-    slug: "campo-arrocero-rio-negro-ca-0093",
-  },
-];
-
-const ULTIMOS_INGRESOS: Campo[] = [
-  {
-    id: "7", referencia: "CA-0144",
-    departamento: "Rivera", paraje: "Tranqueras",
-    superficieHa: 1800, coneatPromedio: 72,
-    precioUsdHa: 1950, precioVentaUsd: 3510000,
-    tipoOperacion: ["venta"], aptitud: ["ganadera", "forestal"],
-    slug: "campo-ganadero-forestal-rivera-ca-0144",
-  },
-  {
-    id: "8", referencia: "CA-0139",
-    departamento: "Florida", paraje: "Casupá",
-    superficieHa: 510, coneatPromedio: 104,
-    precioUsdHa: 3400, precioVentaUsd: 1734000,
-    tipoOperacion: ["venta"], aptitud: ["agricola_ganadera"],
-    slug: "campo-agricola-florida-ca-0139",
-  },
-  {
-    id: "9", referencia: "CA-0136",
-    departamento: "Salto", paraje: "Constitución",
-    superficieHa: 2200, coneatPromedio: 81,
-    precioUsdHa: 0, precioVentaUsd: null,
-    tipoOperacion: ["arrendamiento"], aptitud: ["ganadera"],
-    slug: "campo-ganadero-salto-ca-0136",
-    rentaUsdHaAnio: 145,
-  },
-  {
-    id: "10", referencia: "CA-0133",
-    departamento: "Cerro Largo", paraje: "Melo",
-    superficieHa: 720, coneatPromedio: 91,
-    precioUsdHa: 2600, precioVentaUsd: 1872000,
-    tipoOperacion: ["venta"], aptitud: ["ganadera"],
-    slug: "campo-ganadero-cerro-largo-ca-0133",
-  },
-  {
-    id: "11", referencia: "CA-0131",
-    departamento: "Lavalleja", paraje: "Minas",
-    superficieHa: 380, coneatPromedio: 97,
-    precioUsdHa: 3100, precioVentaUsd: 1178000,
-    tipoOperacion: ["venta"], aptitud: ["agricola_ganadera"],
-    slug: "campo-agricola-lavalleja-ca-0131",
-  },
-];
+type Campo = CampoResumen;
 
 const DEPARTAMENTOS = [
   "Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno",
@@ -123,32 +16,10 @@ const DEPARTAMENTOS = [
   "San José", "Soriano", "Tacuarembó", "Treinta y Tres",
 ];
 
-const INFORMES = [
-  {
-    id: "1",
-    tipo: "Informe de mercado",
-    titulo: "Precios por departamento — Q1 2025",
-    extracto: "Análisis de transacciones del primer trimestre. Tacuarembó y Paysandú lideran el volumen con variaciones de hasta 8% interanual.",
-    fecha: "Marzo 2025",
-    slug: "precios-departamento-q1-2025",
-  },
-  {
-    id: "2",
-    tipo: "Análisis técnico",
-    titulo: "Cómo leer el CONEAT y su impacto en el precio",
-    extracto: "Guía práctica para interpretar el índice de productividad de suelos y su relación directa con el valor de mercado del campo.",
-    fecha: "Febrero 2025",
-    slug: "guia-coneat-impacto-precio",
-  },
-  {
-    id: "3",
-    tipo: "Mercado",
-    titulo: "Arrendamiento vs. compra: análisis financiero 2025",
-    extracto: "Comparativa de rentabilidades según aptitud, zona y capital disponible. Incluye casos tipo con datos reales de mercado.",
-    fecha: "Enero 2025",
-    slug: "arrendamiento-vs-compra-2025",
-  },
-];
+function fmtFechaInforme(d: Date | null) {
+  if (!d) return "";
+  return new Intl.DateTimeFormat("es-UY", { month: "long", year: "numeric" }).format(d);
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -188,11 +59,24 @@ function CampoCard({ campo }: { campo: Campo }) {
       href={`/campos/${campo.slug}`}
       className="group flex flex-col bg-white rounded-xl overflow-hidden border border-crema shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     >
-      {/* Foto placeholder */}
-      <div className="relative h-44 bg-campo flex items-end justify-between p-3">
-        <span className="font-mono text-xs text-white/50">{campo.referencia}</span>
+      {/* Foto de portada (o placeholder si no tiene fotos) */}
+      <div className="relative h-44 bg-campo flex items-end justify-between p-3 overflow-hidden">
+        {campo.fotoPortadaUrl && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={campo.fotoPortadaUrl}
+              alt={campo.titulo}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          </>
+        )}
+        <span className="relative font-mono text-xs text-white/70">{campo.referencia}</span>
         <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+          className={`relative text-xs font-semibold px-2.5 py-1 rounded-full ${
             esArrendamiento
               ? "bg-white/15 text-white border border-white/30"
               : "bg-trigal text-white"
@@ -206,7 +90,9 @@ function CampoCard({ campo }: { campo: Campo }) {
       <div className="flex flex-col flex-1 p-4">
         {/* Ubicación */}
         <div className="mb-3">
-          <p className="font-semibold text-tierra leading-tight">{campo.departamento}</p>
+          <p className="font-semibold text-tierra leading-tight">
+            {DEPARTAMENTO_LABEL[campo.departamento] ?? campo.departamento}
+          </p>
           <p className="text-piedra text-sm">{campo.paraje}</p>
         </div>
 
@@ -216,12 +102,14 @@ function CampoCard({ campo }: { campo: Campo }) {
             <p className="text-[11px] uppercase tracking-wider text-piedra mb-0.5">Superficie</p>
             <p className="font-mono text-sm font-medium text-tierra">{fmtHa(campo.superficieHa)}</p>
           </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-piedra mb-0.5">CONEAT</p>
-            <p className={`font-mono text-sm font-medium ${campo.coneatPromedio >= 100 ? "text-campo" : "text-tierra"}`}>
-              {campo.coneatPromedio}
-            </p>
-          </div>
+          {campo.coneatPromedio != null && (
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-piedra mb-0.5">CONEAT</p>
+              <p className={`font-mono text-sm font-medium ${campo.coneatPromedio >= 100 ? "text-campo" : "text-tierra"}`}>
+                {campo.coneatPromedio}
+              </p>
+            </div>
+          )}
           {campo.aptitud[0] && (
             <div>
               <p className="text-[11px] uppercase tracking-wider text-piedra mb-0.5">Aptitud</p>
@@ -238,7 +126,9 @@ function CampoCard({ campo }: { campo: Campo }) {
           <p className="font-display text-[1.75rem] font-semibold leading-none text-trigal">
             {esArrendamiento && campo.rentaUsdHaAnio
               ? `USD ${campo.rentaUsdHaAnio.toLocaleString("es-UY")}/ha·año`
-              : `USD ${campo.precioUsdHa.toLocaleString("es-UY")}/ha`}
+              : campo.precioUsdHa != null
+              ? `USD ${campo.precioUsdHa.toLocaleString("es-UY")}/ha`
+              : "A consultar"}
           </p>
           {!esArrendamiento && campo.precioVentaUsd && (
             <p className="text-piedra text-sm mt-1">{fmtUsd(campo.precioVentaUsd)} total</p>
@@ -258,39 +148,19 @@ function CampoCard({ campo }: { campo: Campo }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function HomePage() {
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const [camposDestacados, ultimosIngresos, informes] = await Promise.all([
+    getCamposDestacados(6),
+    getUltimosIngresos(5),
+    getContenidosPublicados(3),
+  ]);
+
   return (
     <div className="bg-paja">
 
-      {/* ── NAV ── */}
-      <header className="hero-bg sticky top-0 z-50 border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="font-display text-2xl font-semibold text-white tracking-tight">
-                Campos<span className="text-trigal">URY</span>
-              </span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/campos" className="text-white/70 hover:text-white text-sm transition-colors">
-                Campos
-              </Link>
-              <Link href="/informes" className="text-white/70 hover:text-white text-sm transition-colors">
-                Informes
-              </Link>
-              <Link href="/quienes-somos" className="text-white/70 hover:text-white text-sm transition-colors">
-                Quiénes somos
-              </Link>
-            </nav>
-            <Link
-              href="/contacto"
-              className="rounded-lg bg-trigal px-4 py-2 text-sm font-semibold text-white hover:bg-[#8A6E14] transition-colors"
-            >
-              Publicar campo
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* ── HERO ── */}
       <section className="hero-bg pt-16 pb-20">
@@ -299,24 +169,19 @@ export default function HomePage() {
           {/* Titular */}
           <div className="max-w-3xl mb-12">
             <p className="text-trigal font-mono text-[13px] uppercase tracking-[0.15em] mb-4 animate-fade-up anim-delay-1">
-              Plataforma de campos rurales · Uruguay
+              Inmobiliaria rural · Uruguay
             </p>
             <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-semibold text-white leading-[1.08] tracking-tight mb-5 animate-fade-up anim-delay-2">
-              Campos con{" "}
+              Campos y Chacras{" "}
               <em className="italic text-[#D4BC6A] not-italic" style={{ fontStyle: "italic" }}>
-                datos para decidir.
+                en Uruguay.
               </em>
             </h1>
-            <p className="text-white/60 text-lg leading-relaxed animate-fade-up anim-delay-3">
-              CONEAT desglosado · Polígono real sobre satelital · Infraestructura hídrica.{" "}
-              <br className="hidden sm:block" />
-              Lo que los portales generalistas no pueden darte.
-            </p>
           </div>
 
           {/* Buscador */}
           <div className="animate-fade-up anim-delay-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/15 max-w-4xl">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/15 w-full">
               <p className="text-white/50 text-[13px] font-mono uppercase tracking-wider mb-4">
                 Buscá tu campo
               </p>
@@ -324,60 +189,48 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Stats rápidos */}
-          <div className="mt-10 flex flex-wrap gap-8 animate-fade-up anim-delay-4">
-            {[
-              { val: "280+", label: "campos publicados" },
-              { val: "19",   label: "departamentos" },
-              { val: "CONEAT", label: "desglosado en cada ficha" },
-              { val: "PDF",  label: "ficha técnica descargable" },
-            ].map(({ val, label }) => (
-              <div key={label}>
-                <p className="font-mono text-xl font-medium text-[#D4BC6A]">{val}</p>
-                <p className="text-white/50 text-sm">{label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
       {/* ── CAMPOS DESTACADOS ── */}
-      <section className="py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {camposDestacados.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
-                Selección
-              </p>
-              <h2 className="font-display text-4xl font-semibold text-tierra">
-                Campos destacados
-              </h2>
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
+                  Selección
+                </p>
+                <h2 className="font-display text-4xl font-semibold text-tierra">
+                  Campos destacados
+                </h2>
+              </div>
+              <Link
+                href="/campos"
+                className="hidden sm:block text-trigal text-sm font-semibold hover:underline"
+              >
+                Ver todos los campos →
+              </Link>
             </div>
-            <Link
-              href="/campos"
-              className="hidden sm:block text-trigal text-sm font-semibold hover:underline"
-            >
-              Ver todos los campos →
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {CAMPOS_DESTACADOS.map((c) => (
-              <CampoCard key={c.id} campo={c} />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {camposDestacados.map((c) => (
+                <CampoCard key={c.id} campo={c} />
+              ))}
+            </div>
 
-          <div className="mt-8 text-center sm:hidden">
-            <Link
-              href="/campos"
-              className="inline-block border border-trigal text-trigal rounded-lg px-6 py-3 text-sm font-semibold hover:bg-trigal hover:text-white transition-colors"
-            >
-              Ver todos los campos
-            </Link>
+            <div className="mt-8 text-center sm:hidden">
+              <Link
+                href="/campos"
+                className="inline-block border border-trigal text-trigal rounded-lg px-6 py-3 text-sm font-semibold hover:bg-trigal hover:text-white transition-colors"
+              >
+                Ver todos los campos
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── BÚSQUEDA POR DEPARTAMENTO ── */}
       <section className="bg-crema py-14">
@@ -406,72 +259,78 @@ export default function HomePage() {
       </section>
 
       {/* ── ÚLTIMOS INGRESOS ── */}
-      <section className="py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
-                Recientes
-              </p>
-              <h2 className="font-display text-4xl font-semibold text-tierra">
-                Últimos ingresos
-              </h2>
+      {ultimosIngresos.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
+                  Recientes
+                </p>
+                <h2 className="font-display text-4xl font-semibold text-tierra">
+                  Últimos ingresos
+                </h2>
+              </div>
+              <Link href="/campos?orden=reciente" className="hidden sm:block text-trigal text-sm font-semibold hover:underline">
+                Ver todos →
+              </Link>
             </div>
-            <Link href="/campos?orden=reciente" className="hidden sm:block text-trigal text-sm font-semibold hover:underline">
-              Ver todos →
-            </Link>
-          </div>
 
-          <div className="divide-y divide-crema border-y border-crema">
-            {ULTIMOS_INGRESOS.map((c) => {
-              const esArr = c.tipoOperacion.includes("arrendamiento");
-              return (
-                <Link
-                  key={c.id}
-                  href={`/campos/${c.slug}`}
-                  className="group flex items-center gap-4 py-4 hover:bg-white/60 rounded-lg px-3 -mx-3 transition-colors"
-                >
-                  {/* Ref + badge */}
-                  <div className="w-20 shrink-0">
-                    <span className="font-mono text-xs text-piedra">{c.referencia}</span>
-                  </div>
-
-                  {/* Ubicación */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-tierra truncate">
-                      {c.departamento}
-                      <span className="font-normal text-piedra"> · {c.paraje}</span>
-                    </p>
-                    <p className="text-piedra text-sm mt-0.5">
-                      {APTITUD_LABEL[c.aptitud[0]] ?? c.aptitud[0]}
-                    </p>
-                  </div>
-
-                  {/* Datos */}
-                  <div className="hidden sm:flex items-center gap-8 shrink-0">
-                    <div className="text-right">
-                      <p className="font-mono text-sm text-tierra">{fmtHa(c.superficieHa)}</p>
-                      <p className="text-[11px] text-piedra">CNEAT {c.coneatPromedio}</p>
+            <div className="divide-y divide-crema border-y border-crema">
+              {ultimosIngresos.map((c) => {
+                const esArr = c.tipoOperacion.includes("arrendamiento");
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/campos/${c.slug}`}
+                    className="group flex items-center gap-4 py-4 hover:bg-white/60 rounded-lg px-3 -mx-3 transition-colors"
+                  >
+                    {/* Ref + badge */}
+                    <div className="w-20 shrink-0">
+                      <span className="font-mono text-xs text-piedra">{c.referencia}</span>
                     </div>
-                    <div className="text-right w-36">
-                      <p className="font-display text-xl font-semibold text-trigal leading-none">
-                        {esArr && c.rentaUsdHaAnio
-                          ? `USD ${c.rentaUsdHaAnio}/ha·año`
-                          : `USD ${c.precioUsdHa.toLocaleString("es-UY")}/ha`}
+
+                    {/* Ubicación */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-tierra truncate">
+                        {DEPARTAMENTO_LABEL[c.departamento] ?? c.departamento}
+                        <span className="font-normal text-piedra"> · {c.paraje}</span>
                       </p>
-                      <p className="text-[11px] text-piedra mt-0.5 capitalize">{esArr ? "arrendamiento" : "venta"}</p>
+                      <p className="text-piedra text-sm mt-0.5">
+                        {APTITUD_LABEL[c.aptitud[0]] ?? c.aptitud[0]}
+                      </p>
                     </div>
-                  </div>
 
-                  <span className="text-trigal text-sm hidden md:block shrink-0 group-hover:underline">
-                    Ver →
-                  </span>
-                </Link>
-              );
-            })}
+                    {/* Datos */}
+                    <div className="hidden sm:flex items-center gap-8 shrink-0">
+                      <div className="text-right">
+                        <p className="font-mono text-sm text-tierra">{fmtHa(c.superficieHa)}</p>
+                        {c.coneatPromedio != null && (
+                          <p className="text-[11px] text-piedra">CNEAT {c.coneatPromedio}</p>
+                        )}
+                      </div>
+                      <div className="text-right w-36">
+                        <p className="font-display text-xl font-semibold text-trigal leading-none">
+                          {esArr && c.rentaUsdHaAnio
+                            ? `USD ${c.rentaUsdHaAnio}/ha·año`
+                            : c.precioUsdHa != null
+                            ? `USD ${c.precioUsdHa.toLocaleString("es-UY")}/ha`
+                            : "A consultar"}
+                        </p>
+                        <p className="text-[11px] text-piedra mt-0.5 capitalize">{esArr ? "arrendamiento" : "venta"}</p>
+                      </div>
+                    </div>
+
+                    <span className="text-trigal text-sm hidden md:block shrink-0 group-hover:underline">
+                      Ver →
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── CTA OFERTA ── */}
       <section className="bg-campo py-16 lg:py-20">
@@ -563,47 +422,51 @@ export default function HomePage() {
       </section>
 
       {/* ── INFORMES DE MERCADO ── */}
-      <section className="py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
-                Editorial
-              </p>
-              <h2 className="font-display text-4xl font-semibold text-tierra">
-                Informes de mercado
-              </h2>
-            </div>
-            <Link href="/informes" className="hidden sm:block text-trigal text-sm font-semibold hover:underline">
-              Ver todos →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {INFORMES.map((inf) => (
-              <Link
-                key={inf.id}
-                href={`/informes/${inf.slug}`}
-                className="group flex flex-col bg-white rounded-xl border border-crema p-6 hover:border-trigal/50 hover:shadow-sm transition-all"
-              >
-                <span className="inline-block text-[11px] font-mono uppercase tracking-wider text-trigal mb-3">
-                  {inf.tipo}
-                </span>
-                <h3 className="font-display text-xl font-semibold text-tierra mb-3 leading-snug group-hover:text-trigal transition-colors">
-                  {inf.titulo}
-                </h3>
-                <p className="text-piedra text-sm leading-relaxed flex-1">
-                  {inf.extracto}
+      {informes.length > 0 && (
+        <section className="py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-trigal mb-2">
+                  Editorial
                 </p>
-                <div className="mt-5 pt-4 border-t border-crema flex items-center justify-between">
-                  <span className="text-piedra text-xs font-mono">{inf.fecha}</span>
-                  <span className="text-trigal text-sm font-semibold group-hover:underline">Leer →</span>
-                </div>
+                <h2 className="font-display text-4xl font-semibold text-tierra">
+                  Informes de mercado
+                </h2>
+              </div>
+              <Link href="/informes" className="hidden sm:block text-trigal text-sm font-semibold hover:underline">
+                Ver todos →
               </Link>
-            ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {informes.map((inf) => (
+                <Link
+                  key={inf.id}
+                  href={`/informes/${inf.slug}`}
+                  className="group flex flex-col bg-white rounded-xl border border-crema p-6 hover:border-trigal/50 hover:shadow-sm transition-all"
+                >
+                  <span className="inline-block text-[11px] font-mono uppercase tracking-wider text-trigal mb-3">
+                    {TIPO_CONTENIDO_LABEL[inf.tipo] ?? inf.tipo}
+                  </span>
+                  <h3 className="font-display text-xl font-semibold text-tierra mb-3 leading-snug group-hover:text-trigal transition-colors">
+                    {inf.titulo}
+                  </h3>
+                  {inf.extracto && (
+                    <p className="text-piedra text-sm leading-relaxed flex-1">
+                      {inf.extracto}
+                    </p>
+                  )}
+                  <div className="mt-5 pt-4 border-t border-crema flex items-center justify-between">
+                    <span className="text-piedra text-xs font-mono capitalize">{fmtFechaInforme(inf.publishedAt)}</span>
+                    <span className="text-trigal text-sm font-semibold group-hover:underline">Leer →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── FOOTER ── */}
       <footer className="hero-bg border-t border-white/10 py-12">
@@ -612,7 +475,7 @@ export default function HomePage() {
             <div className="md:col-span-2">
               <Link href="/" className="inline-block mb-3">
                 <span className="font-display text-2xl font-semibold text-white">
-                  Campos<span className="text-trigal">URY</span>
+                  Inmobiliaria Rural
                 </span>
               </Link>
               <p className="text-white/50 text-sm leading-relaxed max-w-xs">
@@ -623,9 +486,14 @@ export default function HomePage() {
             <div>
               <p className="text-white/30 text-[11px] font-mono uppercase tracking-wider mb-3">Plataforma</p>
               <ul className="space-y-2">
-                {["Campos", "Comparador", "Búsquedas guardadas", "Informes"].map((l) => (
+                {[
+                  { l: "Campos", href: "/campos" },
+                  { l: "Comparador", href: "#" },
+                  { l: "Búsquedas guardadas", href: "#" },
+                  { l: "Informes", href: "/informes" },
+                ].map(({ l, href }) => (
                   <li key={l}>
-                    <Link href="#" className="text-white/60 hover:text-white text-sm transition-colors">{l}</Link>
+                    <Link href={href} className="text-white/60 hover:text-white text-sm transition-colors">{l}</Link>
                   </li>
                 ))}
               </ul>
@@ -634,9 +502,12 @@ export default function HomePage() {
             <div>
               <p className="text-white/30 text-[11px] font-mono uppercase tracking-wider mb-3">Empresa</p>
               <ul className="space-y-2">
-                {["Quiénes somos", "Contacto", "Publicar campo", "Política de privacidad"].map((l) => (
+                {[
+                  { l: "Contacto", href: "/contacto" },
+                  { l: "Política de privacidad", href: "#" },
+                ].map(({ l, href }) => (
                   <li key={l}>
-                    <Link href="#" className="text-white/60 hover:text-white text-sm transition-colors">{l}</Link>
+                    <Link href={href} className="text-white/60 hover:text-white text-sm transition-colors">{l}</Link>
                   </li>
                 ))}
               </ul>
@@ -645,7 +516,7 @@ export default function HomePage() {
 
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-white/30 text-xs font-mono">
-              © {new Date().getFullYear()} CamposURY. Todos los derechos reservados.
+              © {new Date().getFullYear()} Inmobiliaria Rural. Todos los derechos reservados.
             </p>
             <p className="text-white/20 text-xs">
               La información publicada proviene del propietario y fuentes de terceros. Verificar antes de operar.

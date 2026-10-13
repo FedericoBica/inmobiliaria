@@ -60,7 +60,7 @@ The geometry column is `GEOMETRY(MultiPolygon, 4326)` in PostGIS; always use GIS
 - **EXIF stripping**: drone photos contain GPS coordinates. All uploaded images must be reprocessed (reencoded), stripping EXIF before storage. This is not optional — it would expose the exact location that the listing is deliberately hiding.
 - **File upload validation**: validate by magic bytes, not by extension or `Content-Type`.
 - **Public forms**: rate limiting by IP and session, Cloudflare Turnstile, honeypot field — required from day one, not added later.
-- **Backoffice**: 2FA mandatory, CSP without `unsafe-inline` (use nonces), session cookies `HttpOnly; Secure; SameSite=Lax`.
+- **Backoffice**: CSP without `unsafe-inline` (use nonces), session cookies `HttpOnly; Secure; SameSite=Lax`.
 - **Owner data**: the `propietario_contacto` fields are encrypted at rest; access is logged and role-restricted.
 
 ## Roles

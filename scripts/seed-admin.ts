@@ -1,6 +1,7 @@
 import { db } from "../src/db";
 import { agentes } from "../src/db/schema";
 import { hashPassword } from "../src/lib/auth-helpers";
+import { validatePasswordPolicy } from "../src/lib/password-policy";
 
 const ADMIN = {
   nombre: "Admin",
@@ -12,6 +13,12 @@ const ADMIN = {
 
 async function seed() {
   console.log("Creando administrador inicial...");
+
+  const policyCheck = await validatePasswordPolicy(ADMIN.password);
+  if (!policyCheck.ok) {
+    console.error(`✗ Contraseña rechazada: ${policyCheck.error}`);
+    process.exit(1);
+  }
 
   const passwordHash = await hashPassword(ADMIN.password);
 

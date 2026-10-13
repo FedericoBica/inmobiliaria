@@ -62,9 +62,9 @@ export default async function CamposAdminPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                {["Ref.", "Campo", "Depto.", "Ha", "USD/ha", "Estado", "Agente", ""].map((h) => (
+                {["Ref.", "Campo", "Depto.", "Ha", "USD/ha", "Estado", "Agente", ""].map((h, i) => (
                   <th
-                    key={h}
+                    key={i}
                     className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
                   >
                     {h}

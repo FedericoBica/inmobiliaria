@@ -27,7 +27,7 @@ export const agentes = pgTable("agentes", {
   telefono: varchar("telefono", { length: 30 }),
   activo: boolean("activo").notNull().default(true),
 
-  // 2FA (TOTP — obligatorio para acceso al backoffice)
+  // 2FA (TOTP) — desactivado en la app; columnas sin uso, se conservan en DB
   totpSecret: text("totp_secret"),
   totpEnabled: boolean("totp_enabled").notNull().default(false),
 

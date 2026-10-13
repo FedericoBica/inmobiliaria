@@ -11,6 +11,7 @@ import type {
 } from "@/app/(backoffice)/admin/(dashboard)/campos/actions";
 import { crearCampo, actualizarCampo } from "@/app/(backoffice)/admin/(dashboard)/campos/actions";
 import { slugify } from "@/lib/slugify";
+import MediaUploader, { type MediaItem } from "@/components/backoffice/MediaUploader";
 
 // ─── Opciones ─────────────────────────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ const INITIAL: CampoFormData = {
   precisionUbicacion: "oculta", radioAproximacionM: "",
   estadoPublicacion: "borrador", destacado: false,
   notasInternas: "", estadoDominial: "", observacionesJuridicas: "",
+  propietarioNombre: "", propietarioTelefono: "", propietarioEmail: "",
 };
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
@@ -616,6 +618,27 @@ function SecPublicacion({ d, set }: { d: CampoFormData; set: (k: keyof CampoForm
           onChange={(e) => set("notasInternas", e.target.value)}
           className={`${inputCls} resize-none`} placeholder="Visible solo para el equipo" />
       </Field>
+
+      <div className="pt-2 border-t border-gray-100">
+        <p className="text-xs font-semibold text-gray-500 mb-1">Contacto del propietario</p>
+        <p className="text-[11px] text-gray-400 mb-3">
+          Se guarda cifrado en la base de datos y cada acceso queda registrado en el log de auditoría.
+        </p>
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="Nombre">
+            <input type="text" value={d.propietarioNombre}
+              onChange={(e) => set("propietarioNombre", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Teléfono">
+            <input type="text" value={d.propietarioTelefono}
+              onChange={(e) => set("propietarioTelefono", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Email">
+            <input type="email" value={d.propietarioEmail}
+              onChange={(e) => set("propietarioEmail", e.target.value)} className={inputCls} />
+          </Field>
+        </div>
+      </div>
     </div>
   );
 }
@@ -629,6 +652,7 @@ const SECTIONS = [
   { id: "infraestructura", label: "Infraestructura" },
   { id: "agua", label: "Agua" },
   { id: "mejoras", label: "Mejoras" },
+  { id: "media", label: "Fotos" },
   { id: "publicacion", label: "Publicación" },
 ] as const;
 
@@ -637,9 +661,29 @@ type SectionId = (typeof SECTIONS)[number]["id"];
 type Props = {
   campoId?: string;
   initialData?: Partial<CampoFormData>;
+  media?: MediaItem[];
 };
 
-export default function CampoForm({ campoId, initialData }: Props) {
+function SecMedia({ campoId, media }: { campoId?: string; media: MediaItem[] }) {
+  if (!campoId) {
+    return (
+      <div className="space-y-4">
+        <SectionTitle>Fotos</SectionTitle>
+        <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          Guardá el campo primero (sección Identificación) para poder subir fotos.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <SectionTitle>Fotos</SectionTitle>
+      <MediaUploader campoId={campoId} initialMedia={media} />
+    </div>
+  );
+}
+
+export default function CampoForm({ campoId, initialData, media = [] }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [section, setSection] = useState<SectionId>("identificacion");
@@ -667,6 +711,7 @@ export default function CampoForm({ campoId, initialData }: Props) {
     infraestructura: <SecInfraestructura d={d} set={set} />,
     agua: <SecAgua d={d} set={set} />,
     mejoras: <SecMejoras d={d} set={set} />,
+    media: <SecMedia campoId={campoId} media={media} />,
     publicacion: <SecPublicacion d={d} set={set} />,
   };
 

@@ -10,10 +10,13 @@ import {
   desgloseConeat,
   fuentesAgua,
   mejoras,
+  historialPrecios,
 } from "@/db/schema/campo-children";
 import { eq } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { slugify } from "@/lib/slugify";
+import { encrypt, decrypt } from "@/lib/encryption";
+import { logAudit } from "@/lib/audit";
 
 // ─── Tipos insert derivados del schema ───────────────────────────────────────
 
@@ -78,6 +81,9 @@ export type CampoFormData = {
   notasInternas: string;
   estadoDominial: string;
   observacionesJuridicas: string;
+  propietarioNombre: string;
+  propietarioTelefono: string;
+  propietarioEmail: string;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,6 +118,16 @@ async function getAgenteId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("No autenticado");
   return session.user.id;
+}
+
+// Serializa y cifra los datos de contacto del propietario — nunca se
+// guardan en texto plano (dato sensible, spec 11.2).
+function buildPropietarioContacto(data: CampoFormData): string | null {
+  const nombre = data.propietarioNombre.trim();
+  const telefono = data.propietarioTelefono.trim();
+  const email = data.propietarioEmail.trim();
+  if (!nombre && !telefono && !email) return null;
+  return encrypt(JSON.stringify({ nombre, telefono, email }));
 }
 
 // Convierte el form data en el objeto para Drizzle insert/update
@@ -169,9 +185,62 @@ function buildValues(data: CampoFormData, agenteId: string, publishedAt?: Date |
     notasInternas: n(data.notasInternas),
     estadoDominial: n(data.estadoDominial),
     observacionesJuridicas: n(data.observacionesJuridicas),
+    propietarioContacto: buildPropietarioContacto(data),
     agenteId,
     publishedAt: publishedAt,
   };
+}
+
+// ─── Auditoría: snapshot curado de campos sensibles/comerciales ──────────────
+// Se excluyen deliberadamente propietarioContacto y notasInternas del log
+// para no duplicar datos sensibles/internos en la tabla de auditoría.
+
+const AUDIT_FIELDS = [
+  "referenciaInterna",
+  "titulo",
+  "estadoPublicacion",
+  "precioVentaUsd",
+  "precioUsdHa",
+  "rentaArrendamientoUsdHaAnio",
+  "departamento",
+  "superficieHa",
+] as const;
+
+// Campos numéric(precision,scale) de Postgres vuelven como string con
+// ceros de relleno (ej. "100.00") — comparar como float evita diffs falsos
+// contra el valor recién ingresado en el form (ej. "100").
+const NUMERIC_AUDIT_FIELDS = new Set([
+  "precioVentaUsd",
+  "precioUsdHa",
+  "rentaArrendamientoUsdHaAnio",
+  "superficieHa",
+]);
+
+function curatedSnapshot(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const f of AUDIT_FIELDS) out[f] = row[f] ?? null;
+  return out;
+}
+
+function valuesEqual(key: string, a: unknown, b: unknown): boolean {
+  if (NUMERIC_AUDIT_FIELDS.has(key)) {
+    const fa = a == null || a === "" ? null : parseFloat(String(a));
+    const fb = b == null || b === "" ? null : parseFloat(String(b));
+    return fa === fb || (Number.isNaN(fa as number) && Number.isNaN(fb as number));
+  }
+  return String(a ?? "") === String(b ?? "");
+}
+
+function diffSnapshots(before: Record<string, unknown>, after: Record<string, unknown>) {
+  const beforeDiff: Record<string, unknown> = {};
+  const afterDiff: Record<string, unknown> = {};
+  for (const key of AUDIT_FIELDS) {
+    if (!valuesEqual(key, before[key], after[key])) {
+      beforeDiff[key] = before[key] ?? null;
+      afterDiff[key] = after[key] ?? null;
+    }
+  }
+  return { beforeDiff, afterDiff };
 }
 
 // ─── Crear campo ──────────────────────────────────────────────────────────────
@@ -189,8 +258,10 @@ export async function crearCampo(data: CampoFormData): Promise<{ error: string }
   const publishedAt = data.estadoPublicacion === "publicado" ? new Date() : null;
   const values = buildValues(data, agenteId, publishedAt);
 
+  let campoId: string;
   try {
     const [campo] = await db.insert(campos).values(values).returning({ id: campos.id });
+    campoId = campo.id;
     await insertChildren(campo.id, data);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error desconocido";
@@ -201,6 +272,13 @@ export async function crearCampo(data: CampoFormData): Promise<{ error: string }
     return { error: `Error al guardar: ${msg}` };
   }
 
+  await logAudit({
+    tabla: "campos",
+    registroId: campoId,
+    accion: "INSERT",
+    valorNuevo: curatedSnapshot(values as unknown as Record<string, unknown>),
+  });
+
   revalidatePath("/admin/campos");
   redirect("/admin/campos");
 }
@@ -210,10 +288,7 @@ export async function crearCampo(data: CampoFormData): Promise<{ error: string }
 export async function actualizarCampo(id: string, data: CampoFormData): Promise<{ error: string } | void> {
   const agenteId = await getAgenteId();
 
-  const [existing] = await db
-    .select({ id: campos.id, publishedAt: campos.publishedAt })
-    .from(campos)
-    .where(eq(campos.id, id));
+  const [existing] = await db.select().from(campos).where(eq(campos.id, id));
   if (!existing) return { error: "Campo no encontrado" };
 
   const publishedAt = data.estadoPublicacion === "publicado"
@@ -230,6 +305,39 @@ export async function actualizarCampo(id: string, data: CampoFormData): Promise<
     return { error: `Error al guardar: ${err instanceof Error ? err.message : "Error desconocido"}` };
   }
 
+  const before = curatedSnapshot(existing as unknown as Record<string, unknown>);
+  const after = curatedSnapshot(values as unknown as Record<string, unknown>);
+  const { beforeDiff, afterDiff } = diffSnapshots(before, after);
+
+  if (Object.keys(afterDiff).length > 0) {
+    await logAudit({
+      tabla: "campos",
+      registroId: id,
+      accion: "UPDATE",
+      valorAnterior: beforeDiff,
+      valorNuevo: afterDiff,
+    });
+  }
+
+  const precioCambio =
+    !valuesEqual("precioVentaUsd", existing.precioVentaUsd, values.precioVentaUsd) ||
+    !valuesEqual("precioUsdHa", existing.precioUsdHa, values.precioUsdHa) ||
+    !valuesEqual(
+      "rentaArrendamientoUsdHaAnio",
+      existing.rentaArrendamientoUsdHaAnio,
+      values.rentaArrendamientoUsdHaAnio
+    );
+
+  if (precioCambio) {
+    await db.insert(historialPrecios).values({
+      campoId: id,
+      precioVentaUsd: values.precioVentaUsd ?? null,
+      precioUsdHa: values.precioUsdHa ?? null,
+      rentaArrendamientoUsdHaAnio: values.rentaArrendamientoUsdHaAnio ?? null,
+      modificadoPor: agenteId,
+    });
+  }
+
   revalidatePath("/admin/campos");
   revalidatePath(`/admin/campos/${id}/editar`);
   redirect("/admin/campos");
@@ -239,23 +347,82 @@ export async function actualizarCampo(id: string, data: CampoFormData): Promise<
 
 export async function eliminarCampo(id: string): Promise<{ error: string } | void> {
   await getAgenteId();
+
+  const [existing] = await db.select().from(campos).where(eq(campos.id, id));
+  if (!existing) return { error: "Campo no encontrado" };
+
   try {
     await db.delete(campos).where(eq(campos.id, id));
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Error al eliminar" };
   }
+
+  await logAudit({
+    tabla: "campos",
+    registroId: id,
+    accion: "DELETE",
+    valorAnterior: curatedSnapshot(existing as unknown as Record<string, unknown>),
+  });
+
   revalidatePath("/admin/campos");
 }
 
 // ─── Cambiar estado ───────────────────────────────────────────────────────────
 
 export async function cambiarEstado(id: string, estado: string): Promise<void> {
+  const [existing] = await db
+    .select({ estadoPublicacion: campos.estadoPublicacion })
+    .from(campos)
+    .where(eq(campos.id, id));
+
   await db.update(campos).set({
     estadoPublicacion: estado as CampoInsert["estadoPublicacion"],
     publishedAt: estado === "publicado" ? new Date() : undefined,
     updatedAt: new Date(),
   }).where(eq(campos.id, id));
+
+  await logAudit({
+    tabla: "campos",
+    registroId: id,
+    accion: "UPDATE",
+    valorAnterior: { estadoPublicacion: existing?.estadoPublicacion ?? null },
+    valorNuevo: { estadoPublicacion: estado },
+  });
+
   revalidatePath("/admin/campos");
+}
+
+// ─── Obtener datos del propietario (descifrados) para el formulario ─────────
+// Cada acceso queda registrado en el log de auditoría (spec 11.2).
+
+export type PropietarioContacto = { nombre: string; telefono: string; email: string };
+
+export async function obtenerPropietarioContacto(
+  campoId: string
+): Promise<PropietarioContacto> {
+  const vacio: PropietarioContacto = { nombre: "", telefono: "", email: "" };
+
+  const [campo] = await db
+    .select({ propietarioContacto: campos.propietarioContacto })
+    .from(campos)
+    .where(eq(campos.id, campoId));
+  if (!campo?.propietarioContacto) return vacio;
+
+  let data: PropietarioContacto;
+  try {
+    data = JSON.parse(decrypt(campo.propietarioContacto)) as PropietarioContacto;
+  } catch (err) {
+    console.error("[obtenerPropietarioContacto] Error al descifrar", err);
+    return vacio;
+  }
+
+  await logAudit({
+    tabla: "campos.propietario_contacto",
+    registroId: campoId,
+    accion: "READ",
+  });
+
+  return data;
 }
 
 // ─── Helpers privados ─────────────────────────────────────────────────────────

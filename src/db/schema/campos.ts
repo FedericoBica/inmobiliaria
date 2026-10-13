@@ -107,6 +107,14 @@ export const campos = pgTable("campos", {
     .notNull()
     .default("oculta"),
   radioAproximacionM: integer("radio_aproximacion_m"),
+  // Punto público para precision_ubicacion = 'aproximada': desplazado
+  // aleatoriamente respecto al centroide real por un trigger de base de
+  // datos (ver src/db/sql/centro_publico_offset.sql), una sola vez por
+  // geometría — nunca recalculado en cada lectura. Si se recalculara en
+  // cada request, pedir la ficha muchas veces y promediar los puntos
+  // devueltos revelaría el centroide real. Nunca escribir esta columna
+  // desde la aplicación.
+  centroPublico: point("centro_publico"),
 
   // Superficie y suelo
   superficieHa: numeric("superficie_ha", { precision: 10, scale: 2 }).notNull(),

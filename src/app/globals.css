@@ -28,20 +28,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Patrón de fondo topográfico para el hero */
+/* Imagen de fondo del hero */
 .hero-bg {
   background-color: #0F1209;
   background-image:
-    radial-gradient(ellipse at 25% 60%, rgba(45,74,30,0.28) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 15%, rgba(45,74,30,0.18) 0%, transparent 50%),
-    repeating-linear-gradient(
-      0deg, transparent, transparent 39px,
-      rgba(168,136,28,0.055) 39px, rgba(168,136,28,0.055) 40px
-    ),
-    repeating-linear-gradient(
-      90deg, transparent, transparent 39px,
-      rgba(168,136,28,0.055) 39px, rgba(168,136,28,0.055) 40px
-    );
+    linear-gradient(to bottom, rgba(15,18,9,0.62) 0%, rgba(15,18,9,0.55) 100%),
+    url('/hero-image.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Animación de entrada escalonada */

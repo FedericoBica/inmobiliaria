@@ -5,7 +5,16 @@ import { signOut } from "@/auth";
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: "⊞" },
   { href: "/admin/campos", label: "Campos", icon: "◇" },
-  { href: "/admin/agentes", label: "Agentes", icon: "◉" },
+  { href: "/admin/leads", label: "Leads", icon: "✉", rolesExcluidos: ["editor_contenido"] },
+  {
+    href: "/admin/contenido",
+    label: "Contenido",
+    icon: "▤",
+    rolesPermitidos: ["administrador", "gerente_comercial", "editor_contenido"],
+  },
+  // Gestión de usuarios es alcance exclusivo de administrador (CLAUDE.md) —
+  // se filtra abajo, no solo se oculta con CSS.
+  { href: "/admin/agentes", label: "Agentes", icon: "◉", rolesPermitidos: ["administrador"] },
 ];
 
 const ROL_LABEL: Record<string, string> = {
@@ -33,11 +42,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <p className="text-[11px] text-white/40 font-mono uppercase tracking-wider mt-0.5">
             Backoffice
           </p>
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-white/50 hover:text-white mt-2.5 transition-colors"
+          >
+            Ver sitio público ↗
+          </Link>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map((item) => (
+          {NAV.filter((item) => {
+            if ("rolesPermitidos" in item && !item.rolesPermitidos?.includes(rol)) return false;
+            if ("rolesExcluidos" in item && item.rolesExcluidos?.includes(rol)) return false;
+            return true;
+          }).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -56,7 +77,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <form
             action={async () => {
               "use server";
-              await signOut({ redirectTo: "/admin/login" });
+              await signOut({ redirectTo: "/login" });
             }}
             className="mt-3"
           >

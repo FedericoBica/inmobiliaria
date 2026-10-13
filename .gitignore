@@ -12,6 +12,8 @@ out/
 .env.test.local
 .env.production.local
 
+.claude/
+
 # Drizzle — las migraciones generadas se commitean, pero no el journal local
 # Descomenta la siguiente línea si preferís no commitear las migraciones:
 # src/db/migrations/
@@ -20,6 +22,9 @@ out/
 .DS_Store
 *.pem
 npm-debug.log*
+
+# Storage local de media (fallback cuando no hay R2/S3/B2 configurado)
+public/uploads/
 
 # Vercel
 .vercel
