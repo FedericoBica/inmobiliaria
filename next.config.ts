@@ -18,6 +18,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Solo aplica a `next dev`: Next bloquea los recursos de desarrollo (HMR)
+  // pedidos desde un origen distinto de localhost, y sin ellos la página no
+  // hidrata — los formularios caen al submit nativo del navegador. Permite
+  // abrir el sitio por 127.0.0.1 o desde el celular en la red local.
+  allowedDevOrigins: ["127.0.0.1", "192.168.*.*"],
   experimental: {
     serverActions: {
       // El default de Next (1MB) rechaza antes de llegar a la validación
