@@ -346,14 +346,14 @@ export default async function HomePage() {
                 ¿Tenés un campo para vender o arrendar?
               </h2>
               <p className="text-white/70 text-lg leading-relaxed mb-8">
-                Cargá tu campo con ficha técnica completa y llegá a compradores e inversores que buscan exactamente lo que vos tenés. Sin comisiones hasta cerrar el trato.
+                Dejanos tus datos y nos ponemos en contacto. Relevamos el campo, armamos una ficha técnica completa y lo presentamos a compradores e inversores que buscan exactamente lo que vos tenés. Sin comisiones hasta cerrar el trato.
               </p>
               <ul className="space-y-3 text-white/80 text-sm">
                 {[
-                  "Ficha técnica descargable en PDF generada automáticamente",
-                  "Polígono sobre mapa satelital con privacidad configurable",
-                  "Distribución automática a portales (Gallito, InfoCasas, MercadoLibre)",
-                  "Leads directamente a tu WhatsApp",
+                  "Ficha técnica con datos reales: CONEAT, aguadas, mejoras y accesos",
+                  "Vos decidís cuánto mostrar de la ubicación del campo",
+                  "Nosotros atendemos y filtramos a los interesados",
+                  "Te mantenemos al tanto de cada consulta y visita",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="text-trigal mt-0.5">✓</span>
